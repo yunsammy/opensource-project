@@ -3,20 +3,21 @@ import pygame
 import time
 
 
-# quiz 생성 클래스
+# 퀴즈 생성 클래스
 class QuizClass:
+    
     @staticmethod
     def quizMethod():
-        f = open('gametext.txt', 'r')
-        a = f.read()
-        b = a.split(' ')
+        with open('gametext.txt', 'r', encoding='utf-8') as f:
+            a = f.read()
+            b = a.split(' ')
         return b
 
 
 def game(level):
     a = QuizClass.quizMethod()
 
-    # 색상설정 변수
+    # 색상 설정 변수
     black = (0, 0, 0)
     white = (255, 255, 255)
     sky_blue = (153, 255, 255)
@@ -37,15 +38,15 @@ def game(level):
     # 제목 설정
     pygame.display.set_caption("PyRain")
 
-    # quiz 변수
+    # 퀴즈 변수
     quizX = []
     quizY = []
     quizY_change = []
     speed_of_quiz = len(a)
 
-    sf = pygame.font.SysFont("freesansbold.ttf", 30)
+    sf = pygame.font.Font("NanumGothic-Bold.ttf", 30)
 
-    # quiz의 위치 및 속도 설정 변수
+    # 퀴즈의 위치 및 속도 설정 변수
     for i in range(speed_of_quiz):
         quizX.append(random.randint(50*i, 50*i+50))
         quizY.append(random.randint(-100, -50))
@@ -53,14 +54,14 @@ def game(level):
 
     # 점수 초기화
     score_value = 0
-    font = pygame.font.Font('freesansbold.ttf', 32)
+    font = pygame.font.Font('NanumGothic-Bold.ttf', 32)
     textX = 10
     textY = 10
 
-    # Game Over 폰트설정
-    over_font = pygame.font.Font('freesansbold.ttf', 64)
+    # 게임오버 폰트 설정
+    over_font = pygame.font.Font('NanumGothic-Bold.ttf', 64)
 
-    # 점수표시 함수
+    # 점수 표시 함수
     def show_score(x, y):
         score = font.render("Score : " + str(score_value), True, (0, 0, 0))
         screen.blit(score, (x, y))
@@ -75,11 +76,11 @@ def game(level):
         over_text = over_font.render("{}stage clear!".format(level), True, (0, 0, 0))
         screen.blit(over_text, (200, 250))
 
-    # quiz 화면 생성 함수
+    # 퀴즈 화면 생성 함수
     def quiz(x, y):
         screen.blit(text, (x, y))
 
-    # quiz 충돌관련 함수
+    # 퀴즈 충돌 관련 함수
     def isCollision(j):
         if inputStr == j:
             return True
@@ -96,7 +97,7 @@ def game(level):
 
         # 배경화면 채우기
         screen.fill((0, 0, 0))
-        # 이미지파일 불러오기
+        # 이미지 파일 불러오기
         screen.blit(background, (0, 0))
         font1 = pygame.font.Font(None, 30)
 
@@ -119,7 +120,7 @@ def game(level):
         for i in range(speed_of_quiz):
             text = sf.render(a[i], True, (0, 0, 0))
             tt = a[i]
-            # Game Over시
+            # 게임오버 시
             if quizY[i] > 550:
                 for j in range(speed_of_quiz):
                     quizY[j] = 2000
@@ -141,7 +142,7 @@ def game(level):
 
             quiz(quizX[i], quizY[i])
 
-            # Game Clear시
+            # 게임 클리어 시
             if score_value == 50:
                 x=True
                 game_clear_text()
@@ -151,7 +152,7 @@ def game(level):
         targetRect = pygame.draw.rect(screen, gray, [300, 550, 200, 20])
         block = font1.render(inputStr, True, (255, 255, 161))
         rect = block.get_rect()
-        rect.topleft = targetRect.topleft  # 왼쪽정렬
+        rect.topleft = targetRect.topleft  # 왼쪽 정렬
 
         screen.blit(block, rect)
         show_score(textX, textY)
@@ -160,6 +161,3 @@ def game(level):
         if x:
             break
     time.sleep(2)
-
-
-
