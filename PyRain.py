@@ -8,11 +8,15 @@ class QuizClass:
     def quizMethod():
         with open('gametext.txt', 'r', encoding='utf-8') as f:
             a = f.read()
-            b = a.split(' ')
+        b = a.split(' ')
         return b
+
+# 전역 점수 변수
+total_score = 0
 
 # 게임 함수
 def game(level):
+    global total_score
     a = QuizClass.quizMethod()
 
     # 색상 설정 변수
@@ -44,14 +48,34 @@ def game(level):
 
     sf = pygame.font.Font("NanumGothic-Bold.ttf", 30)
 
-    # 퀴즈의 위치 및 속도 설정 변수
+    # 텍스트 크기 변수
+    text_sizes = [sf.size(word) for word in a]  # 각 텍스트의 크기
+    text_widths = [size[0] for size in text_sizes]
+    text_heights = [size[1] for size in text_sizes]
+
+    # 사용된 위치 추적 리스트
+    used_positions = []
+
+    # quiz의 위치 및 속도 설정 변수
     for i in range(speed_of_quiz):
-        quizX.append(random.randint(50*i, 50*i+50))
-        quizY.append(random.randint(-100, -50))
-        quizY_change.append(level * 0.2)
+        while True:
+            x = random.randint(0, 800 - text_widths[i])
+            y = random.randint(-100, -50)
+            overlap = False
+
+            for (ux, uy, uw, uh) in used_positions:
+                if abs(x - ux) < uw and abs(y - uy) < uh:
+                    overlap = True
+                    break
+
+            if not overlap:
+                quizX.append(x)
+                quizY.append(y)
+                used_positions.append((x, y, text_widths[i], text_heights[i]))
+                quizY_change.append(level * 0.2)
+                break
 
     # 점수 초기화
-    score_value = 0
     font = pygame.font.Font('NanumGothic-Bold.ttf', 32)
     textX = 10
     textY = 10
@@ -61,7 +85,7 @@ def game(level):
 
     # 점수 표시 함수
     def show_score(x, y):
-        score = font.render("Score : " + str(score_value), True, (0, 0, 0))
+        score = font.render("Score : " + str(total_score), True, (0, 0, 0))
         screen.blit(score, (x, y))
 
     # 게임오버 함수
@@ -69,29 +93,30 @@ def game(level):
         over_text = over_font.render("Game Over", True, (255, 0, 0))
         over_text_rect = over_text.get_rect(center=(400, 250))
         screen.blit(over_text, over_text_rect)
-        final_score = over_font.render("Score: " + str(score_value), True, (0, 0, 0))
+        final_score = over_font.render("Score: " + str(total_score), True, (0, 0, 0))
         final_score_rect = final_score.get_rect(center=(400, 320))
         screen.blit(final_score, final_score_rect)
+        sound = pygame.mixer.Sound("sounds/gameover.mp3")
+        sound.play()
 
     # 게임클리어 함수
     def game_clear_text():
         clear_text = over_font.render("Clear!", True, (0, 255, 0))
         clear_text_rect = clear_text.get_rect(center=(400, 250))
         screen.blit(clear_text, clear_text_rect)
-        final_score = over_font.render("Score: " + str(score_value), True, (0, 0, 0))
+        final_score = over_font.render("Score: " + str(total_score), True, (0, 0, 0))
         final_score_rect = final_score.get_rect(center=(400, 320))
         screen.blit(final_score, final_score_rect)
-        
+        sound = pygame.mixer.Sound("sounds/clear.mp3")
+        sound.play()
+
     # 퀴즈 화면 생성 함수
-    def quiz(x, y):
+    def quiz(x, y, text):
         screen.blit(text, (x, y))
 
     # 퀴즈 충돌 관련 함수
     def isCollision(j):
-        if inputStr == j:
-            return True
-        else:
-            return False
+        return inputStr == j
 
     inputStr = ''
     # 게임 루프 설정 변수
@@ -127,12 +152,25 @@ def game(level):
                     # 엔터 키를 눌렀을 때만 충돌을 체크합니다.
                     for i in range(speed_of_quiz):
                         if isCollision(a[i]):
-                            score_value += 10
+                            total_score += 10
                             inputStr = ''
-                            quizX[i] = random.randint(0, 736)
-                            quizY[i] = random.randint(-150, -100)
+                            while True:
+                                new_x = random.randint(0, 800 - text_widths[i])
+                                new_y = random.randint(-150, -100)
+                                overlap = False
+
+                                for (ux, uy, uw, uh) in used_positions:
+                                    if abs(new_x - ux) < uw and abs(new_y - uy) < uh:
+                                        overlap = True
+                                        break
+
+                                if not overlap:
+                                    quizX[i] = new_x
+                                    quizY[i] = new_y
+                                    used_positions.append((new_x, new_y, text_widths[i], text_heights[i]))
+                                    break
                     inputStr = ""  # 입력 초기화
-            
+
             # 마우스 클릭 이벤트 처리
             if _event.type == pygame.MOUSEBUTTONDOWN:
                 if targetRect.collidepoint(_event.pos):
@@ -151,13 +189,34 @@ def game(level):
                 x = True
                 z = True
                 break
+            # 충돌 시
+            collision = isCollision(tt)
+            # 초기 위치로 되돌리기
+            if collision:
+                total_score += 10
+                inputStr = ''
+                while True:
+                    new_x = random.randint(0, 800 - text_widths[i])
+                    new_y = random.randint(-150, -100)
+                    overlap = False
+
+                    for (ux, uy, uw, uh) in used_positions:
+                        if abs(new_x - ux) < uw and abs(new_y - uy) < uh:
+                            overlap = True
+                            break
+
+                    if not overlap:
+                        quizX[i] = new_x
+                        quizY[i] = new_y
+                        used_positions.append((new_x, new_y, text_widths[i], text_heights[i]))
+                        break
 
             quizY[i] += quizY_change[i]
 
-            quiz(quizX[i], quizY[i])
+            quiz(quizX[i], quizY[i], text)
 
             # 게임 클리어 시
-            if score_value == 50:
+            if total_score >= 50:
                 x = True
                 game_clear_text()
                 break
