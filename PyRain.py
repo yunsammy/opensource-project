@@ -2,10 +2,8 @@ import random
 import pygame
 import time
 
-
 # 퀴즈 생성 클래스
 class QuizClass:
-    
     @staticmethod
     def quizMethod():
         with open('gametext.txt', 'r', encoding='utf-8') as f:
@@ -13,7 +11,7 @@ class QuizClass:
             b = a.split(' ')
         return b
 
-
+# 게임 함수
 def game(level):
     a = QuizClass.quizMethod()
 
@@ -50,7 +48,7 @@ def game(level):
     for i in range(speed_of_quiz):
         quizX.append(random.randint(50*i, 50*i+50))
         quizY.append(random.randint(-100, -50))
-        quizY_change.append(level*0.2)
+        quizY_change.append(level * 0.2)
 
     # 점수 초기화
     score_value = 0
@@ -68,14 +66,22 @@ def game(level):
 
     # 게임오버 함수
     def game_over_text():
-        over_text = over_font.render("GAME OVER", True, (0, 0, 0))
-        screen.blit(over_text, (200, 250))
+        over_text = over_font.render("Game Over", True, (255, 0, 0))
+        over_text_rect = over_text.get_rect(center=(400, 250))
+        screen.blit(over_text, over_text_rect)
+        final_score = over_font.render("Score: " + str(score_value), True, (0, 0, 0))
+        final_score_rect = final_score.get_rect(center=(400, 320))
+        screen.blit(final_score, final_score_rect)
 
     # 게임클리어 함수
     def game_clear_text():
-        over_text = over_font.render("{}stage clear!".format(level), True, (0, 0, 0))
-        screen.blit(over_text, (200, 250))
-
+        clear_text = over_font.render("Clear!", True, (0, 255, 0))
+        clear_text_rect = clear_text.get_rect(center=(400, 250))
+        screen.blit(clear_text, clear_text_rect)
+        final_score = over_font.render("Score: " + str(score_value), True, (0, 0, 0))
+        final_score_rect = final_score.get_rect(center=(400, 320))
+        screen.blit(final_score, final_score_rect)
+        
     # 퀴즈 화면 생성 함수
     def quiz(x, y):
         screen.blit(text, (x, y))
@@ -85,7 +91,7 @@ def game(level):
         if inputStr == j:
             return True
         else:
-            False
+            return False
 
     inputStr = ''
     # 게임 루프 설정 변수
@@ -93,6 +99,9 @@ def game(level):
     z = False
     x = False
     running = True
+
+    input_active = True  # 게임 시작 시 입력란을 활성화 상태로 설정
+
     while running:
 
         # 배경화면 채우기
@@ -109,13 +118,27 @@ def game(level):
                 pygame.quit()
 
             # 키보드 이벤트 처리
-            if _event.type == pygame.KEYDOWN:
+            if _event.type == pygame.KEYDOWN and input_active:
                 if _event.unicode.isalpha():  # 문자열인지 아닌지
                     inputStr += _event.unicode
                 elif _event.key == pygame.K_BACKSPACE:
                     inputStr = inputStr[:-1]
                 elif _event.key == pygame.K_RETURN:
-                    inputStr = ""  # 지우기
+                    # 엔터 키를 눌렀을 때만 충돌을 체크합니다.
+                    for i in range(speed_of_quiz):
+                        if isCollision(a[i]):
+                            score_value += 10
+                            inputStr = ''
+                            quizX[i] = random.randint(0, 736)
+                            quizY[i] = random.randint(-150, -100)
+                    inputStr = ""  # 입력 초기화
+            
+            # 마우스 클릭 이벤트 처리
+            if _event.type == pygame.MOUSEBUTTONDOWN:
+                if targetRect.collidepoint(_event.pos):
+                    input_active = True  # 입력란 클릭 시 활성화
+                else:
+                    input_active = False  # 입력란 이외의 부분 클릭 시 비활성화
 
         for i in range(speed_of_quiz):
             text = sf.render(a[i], True, (0, 0, 0))
@@ -125,26 +148,17 @@ def game(level):
                 for j in range(speed_of_quiz):
                     quizY[j] = 2000
                 game_over_text()
-                x=True
-                z=True
+                x = True
+                z = True
                 break
 
             quizY[i] += quizY_change[i]
-
-            # 충돌 시
-            collision = isCollision(tt)
-            # 초기 위치로 되돌리기
-            if collision:
-                score_value += 10
-                inputStr = ''
-                quizX[i] = random.randint(0, 736)
-                quizY[i] = random.randint(-150, -100)
 
             quiz(quizX[i], quizY[i])
 
             # 게임 클리어 시
             if score_value == 50:
-                x=True
+                x = True
                 game_clear_text()
                 break
 
