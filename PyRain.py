@@ -5,11 +5,12 @@ import time
 
 # quiz 생성 클래스
 class QuizClass:
+    
     @staticmethod
     def quizMethod():
-        f = open('gametext.txt', 'r')
-        a = f.read()
-        b = a.split(' ')
+        with open('gametext.txt', 'r') as f:
+            a = f.read()
+        b = a.split()
         return b
 
 
@@ -45,11 +46,30 @@ def game(level):
 
     sf = pygame.font.SysFont("freesansbold.ttf", 30)
 
+    # 텍스트 크기 변수
+    text_width, text_height = 50, 30  # 대략적인 텍스트 크기
+
+    # 사용된 위치 추적 리스트
+    used_positions = []
+
     # quiz의 위치 및 속도 설정 변수
     for i in range(speed_of_quiz):
-        quizX.append(random.randint(50*i, 50*i+50))
-        quizY.append(random.randint(-100, -50))
-        quizY_change.append(level*0.2)
+        while True:
+            x = random.randint(0, 800 - text_width)
+            y = random.randint(-100, -50)
+            overlap = False
+            
+            for (ux, uy) in used_positions:
+                if abs(x - ux) < text_width and abs(y - uy) < text_height:
+                    overlap = True
+                    break
+            
+            if not overlap:
+                quizX.append(x)
+                quizY.append(y)
+                used_positions.append((x, y))
+                quizY_change.append(level * 0.2)
+                break
 
     # 점수 초기화
     score_value = 0
@@ -62,21 +82,25 @@ def game(level):
 
     # 점수표시 함수
     def show_score(x, y):
-        score = font.render("Score : " + str(score_value), True, (0, 0, 0))
+        score = font.render("Score : " + str(score_value), True, black)
         screen.blit(score, (x, y))
 
     # 게임오버 함수
     def game_over_text():
-        over_text = over_font.render("GAME OVER", True, (0, 0, 0))
+        over_text = over_font.render("GAME OVER", True, black)
         screen.blit(over_text, (200, 250))
+        sound = pygame.mixer.Sound( "sounds/gameover.mp3" )
+        sound.play()
 
     # 게임클리어 함수
     def game_clear_text():
-        over_text = over_font.render("{}stage clear!".format(level), True, (0, 0, 0))
+        over_text = over_font.render(f"{level} stage clear!", True, black)
         screen.blit(over_text, (200, 250))
+        sound = pygame.mixer.Sound( "sounds/clear.mp3" )
+        sound.play()
 
     # quiz 화면 생성 함수
-    def quiz(x, y):
+    def quiz(x, y, text):
         screen.blit(text, (x, y))
 
     # quiz 충돌관련 함수
@@ -84,7 +108,7 @@ def game(level):
         if inputStr == j:
             return True
         else:
-            False
+            return False
 
     inputStr = ''
     # 게임 루프 설정 변수
@@ -95,7 +119,7 @@ def game(level):
     while running:
 
         # 배경화면 채우기
-        screen.fill((0, 0, 0))
+        screen.fill(black)
         # 이미지파일 불러오기
         screen.blit(background, (0, 0))
         font1 = pygame.font.Font(None, 30)
@@ -117,15 +141,15 @@ def game(level):
                     inputStr = ""  # 지우기
 
         for i in range(speed_of_quiz):
-            text = sf.render(a[i], True, (0, 0, 0))
+            text = sf.render(a[i], True, black)
             tt = a[i]
             # Game Over시
             if quizY[i] > 550:
                 for j in range(speed_of_quiz):
                     quizY[j] = 2000
                 game_over_text()
-                x=True
-                z=True
+                x = True
+                z = True
                 break
 
             quizY[i] += quizY_change[i]
@@ -136,14 +160,27 @@ def game(level):
             if collision:
                 score_value += 10
                 inputStr = ''
-                quizX[i] = random.randint(0, 736)
-                quizY[i] = random.randint(-150, -100)
+                while True:
+                    new_x = random.randint(0, 800 - text_width)
+                    new_y = random.randint(-150, -100)
+                    overlap = False
 
-            quiz(quizX[i], quizY[i])
+                    for (ux, uy) in used_positions:
+                        if abs(new_x - ux) < text_width and abs(new_y - uy) < text_height:
+                            overlap = True
+                            break
+
+                    if not overlap:
+                        quizX[i] = new_x
+                        quizY[i] = new_y
+                        used_positions.append((new_x, new_y))
+                        break
+
+            quiz(quizX[i], quizY[i], text)
 
             # Game Clear시
             if score_value == 50:
-                x=True
+                x = True
                 game_clear_text()
                 break
 
@@ -160,6 +197,4 @@ def game(level):
         if x:
             break
     time.sleep(2)
-
-
 
