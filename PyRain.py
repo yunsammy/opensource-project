@@ -150,6 +150,7 @@ def game(level):
                     inputStr = inputStr[:-1]
                 elif _event.key == pygame.K_RETURN:
                     # 엔터 키를 눌렀을 때만 충돌을 체크합니다.
+                    correct_input = False
                     for i in range(speed_of_quiz):
                         if isCollision(a[i]):
                             total_score += 10
@@ -169,8 +170,10 @@ def game(level):
                                     quizY[i] = new_y
                                     used_positions.append((new_x, new_y, text_widths[i], text_heights[i]))
                                     break
+                                
+                    if not correct_input:
+                        total_score -= 10
                     inputStr = ""  # 입력 초기화
-
             # 마우스 클릭 이벤트 처리
             if _event.type == pygame.MOUSEBUTTONDOWN:
                 if targetRect.collidepoint(_event.pos):
