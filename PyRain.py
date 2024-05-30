@@ -127,56 +127,38 @@ def game(level):
 
     input_active = True  # 게임 시작 시 입력란을 활성화 상태로 설정
 
+    # STAGE 문구 출력
+    stage_font = pygame.font.Font('NanumGothic-Bold.ttf', 64)
+    stage_text = stage_font.render("STAGE " + str(level), True, (255, 255, 255))
+    stage_text_rect = stage_text.get_rect(center=(400, 250))
+
+    screen.blit(stage_text, stage_text_rect)
+    pygame.display.update()
+
+    # 3초 대기
+    time.sleep(3)
+
     while running:
+        # 이벤트 처리
+        for _event in pygame.event.get():
+            if _event.type == pygame.QUIT:
+                running = False
+                pygame.quit()
+            elif _event.type == pygame.KEYDOWN and input_active:
+                if _event.key == pygame.K_BACKSPACE:
+                    inputStr = inputStr[:-1]
+                elif _event.key == pygame.K_RETURN:
+                    # 엔터 키가 눌렸을 때 입력된 문자열을 처리하고 초기화
+                    inputStr = ''
+                else:
+                    inputStr += _event.unicode
+
 
         # 배경화면 채우기
         screen.fill((0, 0, 0))
         # 이미지 파일 불러오기
         screen.blit(background, (0, 0))
         font1 = pygame.font.Font(None, 30)
-
-        # 이벤트 처리
-        for _event in pygame.event.get():
-
-            if _event.type == pygame.QUIT:
-                running = False
-                pygame.quit()
-
-            # 키보드 이벤트 처리
-            if _event.type == pygame.KEYDOWN and input_active:
-                if _event.unicode.isalpha():  # 문자열인지 아닌지
-                    inputStr += _event.unicode
-                elif _event.key == pygame.K_BACKSPACE:
-                    inputStr = inputStr[:-1]
-                elif _event.key == pygame.K_RETURN:
-                    # 엔터 키를 눌렀을 때만 충돌을 체크합니다.
-                    for i in range(speed_of_quiz):
-                        if isCollision(a[i]):
-                            total_score += 10
-                            inputStr = ''
-                            while True:
-                                new_x = random.randint(0, 800 - text_widths[i])
-                                new_y = random.randint(-150, -100)
-                                overlap = False
-
-                                for (ux, uy, uw, uh) in used_positions:
-                                    if abs(new_x - ux) < uw and abs(new_y - uy) < uh:
-                                        overlap = True
-                                        break
-
-                                if not overlap:
-                                    quizX[i] = new_x
-                                    quizY[i] = new_y
-                                    used_positions.append((new_x, new_y, text_widths[i], text_heights[i]))
-                                    break
-                    inputStr = ""  # 입력 초기화
-
-            # 마우스 클릭 이벤트 처리
-            if _event.type == pygame.MOUSEBUTTONDOWN:
-                if targetRect.collidepoint(_event.pos):
-                    input_active = True  # 입력란 클릭 시 활성화
-                else:
-                    input_active = False  # 입력란 이외의 부분 클릭 시 비활성화
 
         for i in range(speed_of_quiz):
             text = sf.render(a[i], True, (0, 0, 0))
@@ -202,6 +184,7 @@ def game(level):
 
                     for (ux, uy, uw, uh) in used_positions:
                         if abs(new_x - ux) < uw and abs(new_y - uy) < uh:
+
                             overlap = True
                             break
 
@@ -234,3 +217,4 @@ def game(level):
         if x:
             break
     time.sleep(2)
+
