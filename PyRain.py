@@ -2,14 +2,11 @@ import random
 import pygame
 import time
 
-# 퀴즈 생성 클래스
-class QuizClass:
-    @staticmethod
-    def quizMethod():
-        with open('gametext.txt', 'r', encoding='utf-8') as f:
-            line = f.read()
-        words = line.split(' ')
-        return words
+def read_gametext():
+    with open('gametext.txt', 'r', encoding='utf-8') as f:
+        line = f.read()
+        all_dialect = line.split(' ')
+        return all_dialect
 
 # 전역 점수 변수
 total_score = 0
@@ -17,7 +14,9 @@ total_score = 0
 # 게임 함수
 def game(level):
     global total_score
-    words = QuizClass.quizMethod()
+    all_dialect = read_gametext()
+
+    words = random.sample(all_dialect, 30)
 
     # 색상 설정 변수
     black = (0, 0, 0)
@@ -60,7 +59,9 @@ def game(level):
     for i in range(speed_of_quiz):
         while True:
             x = random.randint(0, 800 - text_widths[i])
-            y = random.randint(-100, -50)
+            # y = random.randint(-100, -50)
+            y = -50 * i  # y 위치를 일정 간격으로 설정하여 순차적으로 떨어지게 함
+
             overlap = False
 
             for (ux, uy, uw, uh) in used_positions:
@@ -72,7 +73,7 @@ def game(level):
                 quizX.append(x)
                 quizY.append(y)
                 used_positions.append((x, y, text_widths[i], text_heights[i]))
-                quizY_change.append(level * 0.2)
+                quizY_change.append(level * 0.05)
                 break
 
     # 점수 초기화
@@ -154,6 +155,14 @@ def game(level):
                         if isCollision(words[i]):
                             total_score += 10
                             inputStr = ''
+                            
+                            # 새로운 랜덤 단어 선택
+                            words[i] = random.sample(all_dialect, 30)
+                            new_word = words[i]
+                            text_sizes[i] = sf.size(new_word)
+                            text_widths[i] = text_sizes[i][0]
+                            text_heights[i] = text_sizes[i][1]
+
                             while True:
                                 new_x = random.randint(0, 800 - text_widths[i])
                                 new_y = random.randint(-150, -100)
@@ -195,6 +204,12 @@ def game(level):
             if collision:
                 total_score += 10
                 inputStr = ''
+                # 새로운 랜덤 단어 선택
+                new_word = random.choice(all_dialect)
+                words[i] = new_word
+                text_sizes[i] = sf.size(new_word)
+                text_widths[i] = text_sizes[i][0]
+                text_heights[i] = text_sizes[i][1]
                 while True:
                     new_x = random.randint(0, 800 - text_widths[i])
                     new_y = random.randint(-150, -100)
@@ -216,7 +231,7 @@ def game(level):
             quiz(quizX[i], quizY[i], text)
 
             # 게임 클리어 시
-            if total_score >= 50:
+            if total_score >= 500:
                 x = True
                 game_clear_text()
                 break
