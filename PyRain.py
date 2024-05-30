@@ -1,6 +1,7 @@
 import random
 import pygame
 import time
+from hangulInputBox import HangulInputBox
 
 def read_gametext():
     with open('gametext.txt', 'r', encoding='utf-8') as f:
@@ -55,6 +56,13 @@ def game(level):
     # 사용된 위치 추적 리스트
     used_positions = []
 
+    # 충돌 검사 함수
+    def check_collision(x, y, width, height):
+        for (ux, uy, uw, uh) in used_positions:
+            if abs(x - ux) < (width + uw) // 2 and abs(y - uy) < (height + uh) // 2:
+                return True
+        return False
+
     # quiz의 위치 및 속도 설정 변수
     for i in range(speed_of_quiz):
         while True:
@@ -62,19 +70,13 @@ def game(level):
             # y = random.randint(-100, -50)
             y = -50 * i  # y 위치를 일정 간격으로 설정하여 순차적으로 떨어지게 함
 
-            overlap = False
-
-            for (ux, uy, uw, uh) in used_positions:
-                if abs(x - ux) < uw and abs(y - uy) < uh:
-                    overlap = True
-                    break
-
-            if not overlap:
+            if not check_collision(x, y, text_widths[i], text_heights[i]):
                 quizX.append(x)
                 quizY.append(y)
                 used_positions.append((x, y, text_widths[i], text_heights[i]))
-                quizY_change.append(level * 0.05)
+                quizY_change.append(level * 0.07)
                 break
+
 
     # 점수 초기화
     font = pygame.font.Font('NanumGothic-Bold.ttf', 32)
@@ -116,88 +118,70 @@ def game(level):
         screen.blit(text, (x, y))
 
     # 퀴즈 충돌 관련 함수
-    def isCollision(j):
-        return inputStr == j
+    def isCollision(input_str, target_str):
+        return input_str == target_str
 
-    inputStr = ''
+    input_box = HangulInputBox("NanumGothic-Bold.ttf", 30, 20, 'white', 'gray')
+    input_box.rect.topleft = (100, 550)
+    input_boxes = pygame.sprite.Group(input_box)
+
     # 게임 루프 설정 변수
     global z
     z = False
     x = False
     running = True
 
-    input_active = True  # 게임 시작 시 입력란을 활성화 상태로 설정
-
-    # 주기적으로 used_positions 초기화
-    reset_interval = 300  # 초기화 간격 (프레임 수)
-    frame_count = 0
-
     while running:
-        frame_count += 1
-        if frame_count >= reset_interval:
-            used_positions.clear()  # used_positions 초기화
-            frame_count = 0
 
         # 배경화면 채우기
         screen.fill((0, 0, 0))
         # 이미지 파일 불러오기
         screen.blit(background, (0, 0))
-        font1 = pygame.font.Font(None, 30)
 
         # 이벤트 처리
         for _event in pygame.event.get():
-
             if _event.type == pygame.QUIT:
                 running = False
                 pygame.quit()
 
             # 키보드 이벤트 처리
-            if _event.type == pygame.KEYDOWN and input_active:
-                if _event.unicode.isalpha():  # 문자열인지 아닌지
-                    inputStr += _event.unicode
-                elif _event.key == pygame.K_BACKSPACE:
-                    inputStr = inputStr[:-1]
-                elif _event.key == pygame.K_RETURN:
-                    # 엔터 키를 눌렀을 때만 충돌을 체크합니다.
-                    for i in range(speed_of_quiz):
-                        if isCollision(words[i]):
-                            total_score += 10
-                            inputStr = ''
-                            
-                            # 새로운 랜덤 단어 선택
-                            words[i] = random.sample(all_dialect, 30)
-                            new_word = words[i]
-                            text_sizes[i] = sf.size(new_word)
-                            text_widths[i] = text_sizes[i][0]
-                            text_heights[i] = text_sizes[i][1]
-
-                            while True:
-                                new_x = random.randint(0, 800 - text_widths[i])
-                                new_y = random.randint(-150, -100)
-                                overlap = False
-
-                                for (ux, uy, uw, uh) in used_positions:
-                                    if abs(new_x - ux) < uw and abs(new_y - uy) < uh:
-                                        overlap = True
-                                        break
-
-                                if not overlap:
-                                    quizX[i] = new_x
-                                    quizY[i] = new_y
-                                    used_positions.append((new_x, new_y, text_widths[i], text_heights[i]))
-                                    break
-                    inputStr = ""  # 입력 초기화
+            input_boxes.update(_event)
 
             # 마우스 클릭 이벤트 처리
             if _event.type == pygame.MOUSEBUTTONDOWN:
-                if targetRect.collidepoint(_event.pos):
-                    input_active = True  # 입력란 클릭 시 활성화
+                if input_box.rect.collidepoint(_event.pos):
+                    input_box.active = True  # 입력란 클릭 시 활성화
                 else:
-                    input_active = False  # 입력란 이외의 부분 클릭 시 비활성화
+                    input_box.active = False  # 입력란 이외의 부분 클릭 시 비활성화
+
+            # 입력 이벤트 처리
+            if _event.type == pygame.USEREVENT and _event.name == 'enterEvent':
+                input_str = _event.text
+                for i in range(speed_of_quiz):
+                    if isCollision(input_str, words[i]):
+                        total_score += 10
+                        # 새로운 랜덤 단어 선택
+                        new_word = random.choice(all_dialect)
+                        words[i] = new_word
+                        text_sizes[i] = sf.size(new_word)
+                        text_widths[i] = text_sizes[i][0]
+                        text_heights[i] = text_sizes[i][1]
+                        
+                        while True:
+                            new_x = random.randint(0, 800 - text_widths[i])
+                            new_y = random.randint(-150, -100)
+                            if not check_collision(new_x, new_y, text_widths[i], text_heights[i]):
+                                quizX[i] = new_x
+                                quizY[i] = new_y
+                                used_positions.append((new_x, new_y, text_widths[i], text_heights[i]))
+                                break
+
+        used_positions.clear()
 
         for i in range(speed_of_quiz):
             text = sf.render(words[i], True, (0, 0, 0))
-            tt = words[i]
+
+
             # 게임오버 시
             if quizY[i] > 550:
                 for j in range(speed_of_quiz):
@@ -206,41 +190,9 @@ def game(level):
                 x = True
                 z = True
                 break
-            # 충돌 시
-            collision = isCollision(tt)
-            # 초기 위치로 되돌리기
-            if collision:
-                total_score += 10
-                inputStr = ''
-                # 새로운 랜덤 단어 선택
-                retry_count = 0  # 위치 재시도 제한 카운터
-                max_retries = 10  # 최대 재시도 횟수
-                while True:
-                    new_word = random.choice(all_dialect)
-                    text_sizes[i] = sf.size(new_word)
-                    text_widths[i] = text_sizes[i][0]
-                    text_heights[i] = text_sizes[i][1]
-
-                    new_x = random.randint(0, 800 - text_widths[i])
-                    new_y = random.randint(-150, -100)
-                    overlap = False
-
-                    for (ux, uy, uw, uh) in used_positions:
-                        if abs(new_x - ux) < uw and abs(new_y - uy) < uh:
-                            overlap = True
-                            break
-
-                    if not overlap or retry_count >= max_retries:
-                        words[i] = new_word
-                        quizX[i] = new_x
-                        quizY[i] = new_y
-                        used_positions.append((new_x, new_y, text_widths[i], text_heights[i]))
-                        break
-                    
-                    retry_count += 1
-
             quizY[i] += quizY_change[i]
-
+            if not check_collision(quizX[i], quizY[i], text_widths[i], text_heights[i]):
+                used_positions.append((quizX[i], quizY[i], text_widths[i], text_heights[i]))
             quiz(quizX[i], quizY[i], text)
 
             # 게임 클리어 시
@@ -249,13 +201,8 @@ def game(level):
                 game_clear_text()
                 break
 
-        # 타이핑 구간 생성 및 설정
-        targetRect = pygame.draw.rect(screen, gray, [300, 550, 200, 20])
-        block = font1.render(inputStr, True, (255, 255, 161))
-        rect = block.get_rect()
-        rect.topleft = targetRect.topleft  # 왼쪽 정렬
-
-        screen.blit(block, rect)
+        # 입력란 그리기
+        input_boxes.draw(screen)
         show_score(textX, textY)
         pygame.display.update()
 
