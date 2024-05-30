@@ -128,7 +128,15 @@ def game(level):
 
     input_active = True  # 게임 시작 시 입력란을 활성화 상태로 설정
 
+    # 주기적으로 used_positions 초기화
+    reset_interval = 300  # 초기화 간격 (프레임 수)
+    frame_count = 0
+
     while running:
+        frame_count += 1
+        if frame_count >= reset_interval:
+            used_positions.clear()  # used_positions 초기화
+            frame_count = 0
 
         # 배경화면 채우기
         screen.fill((0, 0, 0))
@@ -205,12 +213,14 @@ def game(level):
                 total_score += 10
                 inputStr = ''
                 # 새로운 랜덤 단어 선택
-                new_word = random.choice(all_dialect)
-                words[i] = new_word
-                text_sizes[i] = sf.size(new_word)
-                text_widths[i] = text_sizes[i][0]
-                text_heights[i] = text_sizes[i][1]
+                retry_count = 0  # 위치 재시도 제한 카운터
+                max_retries = 10  # 최대 재시도 횟수
                 while True:
+                    new_word = random.choice(all_dialect)
+                    text_sizes[i] = sf.size(new_word)
+                    text_widths[i] = text_sizes[i][0]
+                    text_heights[i] = text_sizes[i][1]
+
                     new_x = random.randint(0, 800 - text_widths[i])
                     new_y = random.randint(-150, -100)
                     overlap = False
@@ -220,11 +230,14 @@ def game(level):
                             overlap = True
                             break
 
-                    if not overlap:
+                    if not overlap or retry_count >= max_retries:
+                        words[i] = new_word
                         quizX[i] = new_x
                         quizY[i] = new_y
                         used_positions.append((new_x, new_y, text_widths[i], text_heights[i]))
                         break
+                    
+                    retry_count += 1
 
             quizY[i] += quizY_change[i]
 
