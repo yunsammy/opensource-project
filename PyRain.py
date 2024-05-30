@@ -74,7 +74,7 @@ def game(level):
                 quizX.append(x)
                 quizY.append(y)
                 used_positions.append((x, y, text_widths[i], text_heights[i]))
-                quizY_change.append(level * 0.02)
+                quizY_change.append(level * 0.07)
                 break
 
 
@@ -180,8 +180,6 @@ def game(level):
 
         for i in range(speed_of_quiz):
             text = sf.render(words[i], True, (0, 0, 0))
-            
-           
 
 
             # 게임오버 시
