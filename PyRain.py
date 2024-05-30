@@ -7,9 +7,9 @@ class QuizClass:
     @staticmethod
     def quizMethod():
         with open('gametext.txt', 'r', encoding='utf-8') as f:
-            a = f.read()
-        b = a.split(' ')
-        return b
+            line = f.read()
+        words = line.split(' ')
+        return words
 
 # 전역 점수 변수
 total_score = 0
@@ -17,7 +17,7 @@ total_score = 0
 # 게임 함수
 def game(level):
     global total_score
-    a = QuizClass.quizMethod()
+    words = QuizClass.quizMethod()
 
     # 색상 설정 변수
     black = (0, 0, 0)
@@ -44,12 +44,12 @@ def game(level):
     quizX = []
     quizY = []
     quizY_change = []
-    speed_of_quiz = len(a)
+    speed_of_quiz = len(words)
 
     sf = pygame.font.Font("NanumGothic-Bold.ttf", 30)
 
     # 텍스트 크기 변수
-    text_sizes = [sf.size(word) for word in a]  # 각 텍스트의 크기
+    text_sizes = [sf.size(word) for word in words]  # 각 텍스트의 크기
     text_widths = [size[0] for size in text_sizes]
     text_heights = [size[1] for size in text_sizes]
 
@@ -151,7 +151,7 @@ def game(level):
                 elif _event.key == pygame.K_RETURN:
                     # 엔터 키를 눌렀을 때만 충돌을 체크합니다.
                     for i in range(speed_of_quiz):
-                        if isCollision(a[i]):
+                        if isCollision(words[i]):
                             total_score += 10
                             inputStr = ''
                             while True:
@@ -179,8 +179,8 @@ def game(level):
                     input_active = False  # 입력란 이외의 부분 클릭 시 비활성화
 
         for i in range(speed_of_quiz):
-            text = sf.render(a[i], True, (0, 0, 0))
-            tt = a[i]
+            text = sf.render(words[i], True, (0, 0, 0))
+            tt = words[i]
             # 게임오버 시
             if quizY[i] > 550:
                 for j in range(speed_of_quiz):
