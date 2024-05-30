@@ -56,6 +56,13 @@ def game(level):
     # 사용된 위치 추적 리스트
     used_positions = []
 
+    # 충돌 검사 함수
+    def check_collision(x, y, width, height):
+        for (ux, uy, uw, uh) in used_positions:
+            if abs(x - ux) < (width + uw) // 2 and abs(y - uy) < (height + uh) // 2:
+                return True
+        return False
+
     # quiz의 위치 및 속도 설정 변수
     for i in range(speed_of_quiz):
         while True:
@@ -63,19 +70,13 @@ def game(level):
             # y = random.randint(-100, -50)
             y = -50 * i  # y 위치를 일정 간격으로 설정하여 순차적으로 떨어지게 함
 
-            overlap = False
-
-            for (ux, uy, uw, uh) in used_positions:
-                if abs(x - ux) < uw and abs(y - uy) < uh:
-                    overlap = True
-                    break
-
-            if not overlap:
+            if not check_collision(x, y, text_widths[i], text_heights[i]):
                 quizX.append(x)
                 quizY.append(y)
                 used_positions.append((x, y, text_widths[i], text_heights[i]))
-                quizY_change.append(level * 0.05)
+                quizY_change.append(level * 0.02)
                 break
+
 
     # 점수 초기화
     font = pygame.font.Font('NanumGothic-Bold.ttf', 32)
@@ -165,24 +166,24 @@ def game(level):
                         text_sizes[i] = sf.size(new_word)
                         text_widths[i] = text_sizes[i][0]
                         text_heights[i] = text_sizes[i][1]
+                        
                         while True:
                             new_x = random.randint(0, 800 - text_widths[i])
                             new_y = random.randint(-150, -100)
-                            overlap = False
-
-                            for (ux, uy, uw, uh) in used_positions:
-                                if abs(new_x - ux) < uw and abs(new_y - uy) < uh:
-                                    overlap = True
-                                    break
-
-                            if not overlap:
+                            if not check_collision(new_x, new_y, text_widths[i], text_heights[i]):
                                 quizX[i] = new_x
                                 quizY[i] = new_y
                                 used_positions.append((new_x, new_y, text_widths[i], text_heights[i]))
                                 break
 
+        used_positions.clear()
+
         for i in range(speed_of_quiz):
             text = sf.render(words[i], True, (0, 0, 0))
+            
+           
+
+
             # 게임오버 시
             if quizY[i] > 550:
                 for j in range(speed_of_quiz):
@@ -192,6 +193,8 @@ def game(level):
                 z = True
                 break
             quizY[i] += quizY_change[i]
+            if not check_collision(quizX[i], quizY[i], text_widths[i], text_heights[i]):
+                used_positions.append((quizX[i], quizY[i], text_widths[i], text_heights[i]))
             quiz(quizX[i], quizY[i], text)
 
             # 게임 클리어 시
