@@ -1,23 +1,25 @@
 import random
 import pygame
 import time
+from hangulInputBox import HangulInputBox
 
+def read_gametext():
+    with open('gametext.txt', 'r', encoding='utf-8') as f:
+        line = f.read()
+        all_dialect = line.split(' ')
+        return all_dialect
 
-# quiz 생성 클래스
-class QuizClass:
-    
-    @staticmethod
-    def quizMethod():
-        with open('gametext.txt', 'r') as f:
-            a = f.read()
-        b = a.split()
-        return b
+# 전역 점수 변수
+total_score = 0
 
-
+# 게임 함수
 def game(level):
-    a = QuizClass.quizMethod()
+    global total_score
+    all_dialect = read_gametext()
 
-    # 색상설정 변수
+    words = random.sample(all_dialect, 30)
+
+    # 색상 설정 변수
     black = (0, 0, 0)
     white = (255, 255, 255)
     sky_blue = (153, 255, 255)
@@ -38,16 +40,18 @@ def game(level):
     # 제목 설정
     pygame.display.set_caption("PyRain")
 
-    # quiz 변수
+    # 퀴즈 변수
     quizX = []
     quizY = []
     quizY_change = []
-    speed_of_quiz = len(a)
+    speed_of_quiz = len(words)
 
-    sf = pygame.font.SysFont("freesansbold.ttf", 30)
+    sf = pygame.font.Font("NanumGothic-Bold.ttf", 30)
 
     # 텍스트 크기 변수
-    text_width, text_height = 50, 30  # 대략적인 텍스트 크기
+    text_sizes = [sf.size(word) for word in words]  # 각 텍스트의 크기
+    text_widths = [size[0] for size in text_sizes]
+    text_heights = [size[1] for size in text_sizes]
 
     # 사용된 위치 추적 리스트
     used_positions = []
@@ -55,95 +59,131 @@ def game(level):
     # quiz의 위치 및 속도 설정 변수
     for i in range(speed_of_quiz):
         while True:
-            x = random.randint(0, 800 - text_width)
-            y = random.randint(-100, -50)
+            x = random.randint(0, 800 - text_widths[i])
+            # y = random.randint(-100, -50)
+            y = -50 * i  # y 위치를 일정 간격으로 설정하여 순차적으로 떨어지게 함
+
             overlap = False
-            
-            for (ux, uy) in used_positions:
-                if abs(x - ux) < text_width and abs(y - uy) < text_height:
+
+            for (ux, uy, uw, uh) in used_positions:
+                if abs(x - ux) < uw and abs(y - uy) < uh:
                     overlap = True
                     break
-            
+
             if not overlap:
                 quizX.append(x)
                 quizY.append(y)
-                used_positions.append((x, y))
-                quizY_change.append(level * 0.2)
+                used_positions.append((x, y, text_widths[i], text_heights[i]))
+                quizY_change.append(level * 0.05)
                 break
 
     # 점수 초기화
-    score_value = 0
-    font = pygame.font.Font('freesansbold.ttf', 32)
+    font = pygame.font.Font('NanumGothic-Bold.ttf', 32)
     textX = 10
     textY = 10
 
-    # Game Over 폰트설정
-    over_font = pygame.font.Font('freesansbold.ttf', 64)
+    # 게임오버 폰트 설정
+    over_font = pygame.font.Font('NanumGothic-Bold.ttf', 64)
 
-    # 점수표시 함수
+    # 점수 표시 함수
     def show_score(x, y):
-        score = font.render("Score : " + str(score_value), True, black)
+        score = font.render("Score : " + str(total_score), True, (0, 0, 0))
         screen.blit(score, (x, y))
 
     # 게임오버 함수
     def game_over_text():
-        over_text = over_font.render("GAME OVER", True, black)
-        screen.blit(over_text, (200, 250))
-        sound = pygame.mixer.Sound( "sounds/gameover.mp3" )
+        over_text = over_font.render("Game Over", True, (255, 0, 0))
+        over_text_rect = over_text.get_rect(center=(400, 250))
+        screen.blit(over_text, over_text_rect)
+        final_score = over_font.render("Score: " + str(total_score), True, (0, 0, 0))
+        final_score_rect = final_score.get_rect(center=(400, 320))
+        screen.blit(final_score, final_score_rect)
+        sound = pygame.mixer.Sound("sounds/gameover.mp3")
         sound.play()
 
     # 게임클리어 함수
     def game_clear_text():
-        over_text = over_font.render(f"{level} stage clear!", True, black)
-        screen.blit(over_text, (200, 250))
-        sound = pygame.mixer.Sound( "sounds/clear.mp3" )
+        clear_text = over_font.render("Clear!", True, (0, 255, 0))
+        clear_text_rect = clear_text.get_rect(center=(400, 250))
+        screen.blit(clear_text, clear_text_rect)
+        final_score = over_font.render("Score: " + str(total_score), True, (0, 0, 0))
+        final_score_rect = final_score.get_rect(center=(400, 320))
+        screen.blit(final_score, final_score_rect)
+        sound = pygame.mixer.Sound("sounds/clear.mp3")
         sound.play()
 
-    # quiz 화면 생성 함수
+    # 퀴즈 화면 생성 함수
     def quiz(x, y, text):
         screen.blit(text, (x, y))
 
-    # quiz 충돌관련 함수
-    def isCollision(j):
-        if inputStr == j:
-            return True
-        else:
-            return False
+    # 퀴즈 충돌 관련 함수
+    def isCollision(input_str, target_str):
+        return input_str == target_str
 
-    inputStr = ''
+    input_box = HangulInputBox("NanumGothic-Bold.ttf", 30, 20, 'white', 'gray')
+    input_box.rect.topleft = (100, 550)
+    input_boxes = pygame.sprite.Group(input_box)
+
     # 게임 루프 설정 변수
     global z
     z = False
     x = False
     running = True
+
     while running:
 
         # 배경화면 채우기
-        screen.fill(black)
-        # 이미지파일 불러오기
+        screen.fill((0, 0, 0))
+        # 이미지 파일 불러오기
         screen.blit(background, (0, 0))
-        font1 = pygame.font.Font(None, 30)
 
         # 이벤트 처리
         for _event in pygame.event.get():
-
             if _event.type == pygame.QUIT:
                 running = False
                 pygame.quit()
 
             # 키보드 이벤트 처리
-            if _event.type == pygame.KEYDOWN:
-                if _event.unicode.isalpha():  # 문자열인지 아닌지
-                    inputStr += _event.unicode
-                elif _event.key == pygame.K_BACKSPACE:
-                    inputStr = inputStr[:-1]
-                elif _event.key == pygame.K_RETURN:
-                    inputStr = ""  # 지우기
+            input_boxes.update(_event)
+
+            # 마우스 클릭 이벤트 처리
+            if _event.type == pygame.MOUSEBUTTONDOWN:
+                if input_box.rect.collidepoint(_event.pos):
+                    input_box.active = True  # 입력란 클릭 시 활성화
+                else:
+                    input_box.active = False  # 입력란 이외의 부분 클릭 시 비활성화
+
+            # 입력 이벤트 처리
+            if _event.type == pygame.USEREVENT and _event.name == 'enterEvent':
+                input_str = _event.text
+                for i in range(speed_of_quiz):
+                    if isCollision(input_str, words[i]):
+                        total_score += 10
+                        # 새로운 랜덤 단어 선택
+                        new_word = random.choice(all_dialect)
+                        words[i] = new_word
+                        text_sizes[i] = sf.size(new_word)
+                        text_widths[i] = text_sizes[i][0]
+                        text_heights[i] = text_sizes[i][1]
+                        while True:
+                            new_x = random.randint(0, 800 - text_widths[i])
+                            new_y = random.randint(-150, -100)
+                            overlap = False
+
+                            for (ux, uy, uw, uh) in used_positions:
+                                if abs(new_x - ux) < uw and abs(new_y - uy) < uh:
+                                    overlap = True
+                                    break
+
+                            if not overlap:
+                                quizX[i] = new_x
+                                quizY[i] = new_y
+                                used_positions.append((new_x, new_y, text_widths[i], text_heights[i]))
+                                break
 
         for i in range(speed_of_quiz):
-            text = sf.render(a[i], True, black)
-            tt = a[i]
-            # Game Over시
+            text = sf.render(words[i], True, (0, 0, 0))
+            # 게임오버 시
             if quizY[i] > 550:
                 for j in range(speed_of_quiz):
                     quizY[j] = 2000
@@ -151,50 +191,20 @@ def game(level):
                 x = True
                 z = True
                 break
-
             quizY[i] += quizY_change[i]
-
-            # 충돌 시
-            collision = isCollision(tt)
-            # 초기 위치로 되돌리기
-            if collision:
-                score_value += 10
-                inputStr = ''
-                while True:
-                    new_x = random.randint(0, 800 - text_width)
-                    new_y = random.randint(-150, -100)
-                    overlap = False
-
-                    for (ux, uy) in used_positions:
-                        if abs(new_x - ux) < text_width and abs(new_y - uy) < text_height:
-                            overlap = True
-                            break
-
-                    if not overlap:
-                        quizX[i] = new_x
-                        quizY[i] = new_y
-                        used_positions.append((new_x, new_y))
-                        break
-
             quiz(quizX[i], quizY[i], text)
 
-            # Game Clear시
-            if score_value == 50:
+            # 게임 클리어 시
+            if total_score >= 500:
                 x = True
                 game_clear_text()
                 break
 
-        # 타이핑 구간 생성 및 설정
-        targetRect = pygame.draw.rect(screen, gray, [300, 550, 200, 20])
-        block = font1.render(inputStr, True, (255, 255, 161))
-        rect = block.get_rect()
-        rect.topleft = targetRect.topleft  # 왼쪽정렬
-
-        screen.blit(block, rect)
+        # 입력란 그리기
+        input_boxes.draw(screen)
         show_score(textX, textY)
         pygame.display.update()
 
         if x:
             break
     time.sleep(2)
-
